@@ -124,7 +124,7 @@ impl Board {
         }
         for i in 0..4 {
             if (x as i32 - i as i32) >= 0 && (x as i32+3 - i as i32) <= 6 && y+i <= 5 && (y as i32-3 + i as i32) >= 0{
-                if board[x-i+3][y+i-3] == board[x-i+2][y+i-2] && board[x-i+1][y+i-1] == board[x-i][y+i] && board[x-i+3][y+i-3] == board[x+i][y+i] {
+                if board[x-i+3][y+i-3] == board[x-i+2][y+i-2] && board[x-i+1][y+i-1] == board[x-i][y+i] && board[x-i+3][y+i-3] == board[x-i][y+i] {
                     return true
                 }
             }
