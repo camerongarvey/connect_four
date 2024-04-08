@@ -16,7 +16,7 @@ impl Board {
                         ['0', '0', '0', '0', '0', '0'],
                         ['0', '0', '0', '0', '0', '0'],
                         ['0', '0', '0', '0', '0', '0']],
-                turn: 'y' }
+                turn: 'r' }
     }
 
     pub fn print_board(&self) { //prints the board to standard output
@@ -28,54 +28,15 @@ impl Board {
         }
         print!("1234567 \n")
     }
-
-    pub fn player_move(&mut self) -> bool{ //player move function
-        let target: usize = self.get_move();
-        if self.check_legal_move(target) {
-            self.make_move(target);
-            if self.check_win(target) {
-                println!("{} Wins!", self.turn);
-                return true
-            } else if !self.board.iter().any(|row| row.contains(&'0')){
-                println!("It's a tie!");
-                return true
-            }
-            return false
-        } else {
-            self.player_move();
-        }
-        false
-        
-    }
    
-    fn get_move(&self) -> usize { //Reads input and returns it
-        println!("It is {}'s turn. Input move below: ", self.turn);
-        
-            let mut input_string: String = String::new();
-        
-            std::io::stdin()
-                .read_line(&mut input_string)
-                .expect("Failed to read input");
-            let trimmed_input = input_string.trim();
-
-            match trimmed_input.parse::<usize>() {
-                    Ok(parsed_value) => {
-                        return parsed_value; //could be invalid move
-                    },
-                    Err(_) => {
-                        return 99; //is invalid move, will cause function to be run again
-                    }
-                }
-    } 
-
-    fn check_legal_move(&self, target:usize) -> bool { //checks if move is legal or not
+    pub fn check_legal_move(&self, target:usize) -> bool { //checks if move is legal or not
         if target <= 7 && target > 0 && self.board[target-1].contains(&'0') { //-1 to offset array indexing 
             return true
         }
         false
     }
 
-    fn make_move(&mut self, target:usize) { //edits board
+    pub fn make_move(&mut self, target:usize) { //edits board
         for row in 0..5 {
             if self.board[target-1][row+1] != '0' {
                 self.board[target-1][row] = self.turn;
@@ -96,7 +57,6 @@ impl Board {
                 break
             }
         }
-        
         //vert
         for i in 0..4 {
             if y+i <= 5 && (y as i32-3 + i as i32) >= 0{ 
