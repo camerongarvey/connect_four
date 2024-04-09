@@ -202,7 +202,7 @@ async fn main() {
                                 }
             
                                 if board.check_win(current_colunm as usize) {
-                                    if board.turn == 'r' {
+                                    if board.turn == 'y' {
                                         status = 1;
                                         press_delay = false;
                         
