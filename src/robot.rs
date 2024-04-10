@@ -17,6 +17,7 @@ pub mod robot {
    
         pub fn iterate(&mut self, mut list: &mut Vec<Vec<char>>) {
             if self.lifetime == 0 {
+                self.history.push('i');
                 list.push(self.history.clone());
                 return
             }
@@ -125,8 +126,12 @@ impl Master {
         self.moves = vec![];
         let mut bot = Iterator::new(board, turn, Vec::new(), robot_turn, self.depth);
         bot.iterate(&mut self.moves);
+
+        self.moves.sort_by(|a, b| a.len().cmp(&b.len()));
+
+
         println!("{:?}", self.map_moves(&self.moves));
-        '0'
+        ' '
     }
    
 
