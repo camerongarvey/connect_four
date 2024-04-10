@@ -1,5 +1,7 @@
 mod game_engine;
 pub use crate::game_engine::game_engine as game;
+pub mod robot;
+pub use crate::robot::robot as computer;
 
 use macroquad::prelude::*;
 
@@ -16,7 +18,7 @@ async fn main() {
     menu().await;
 
     async fn menu() {
-        let mut player_one_colour: usize = 1;
+        let mut player_one_colour: usize = 0;
         let mut player_two_colour: usize = 2;
 
         let menu_items:Vec<String> = vec!["Play".to_string(), "Options".to_string(), "Credits".to_string(), "Quit".to_string()];
@@ -164,6 +166,7 @@ async fn main() {
                 let mut turn_colour:macroquad::color::Color = COLOURS[p1_colour];
                 let mut status:u8 = 0;  
                 let mut press_delay = false;
+                let mut computer_player = computer::Master::new();
                 loop {
                     if is_key_pressed(KeyCode::Escape) {
                         break;
@@ -200,9 +203,11 @@ async fn main() {
                                     board.turn='r';
                                     turn_colour=COLOURS[p1_colour];
                                 }
+                                println!("{}", computer_player.get_move(board.board, board.turn, board.turn));
+
             
                                 if board.check_win(current_colunm as usize) {
-                                    if board.turn == 'r' {
+                                    if board.turn == 'y' {
                                         status = 1;
                                         press_delay = false;
                         
