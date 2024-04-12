@@ -35,14 +35,13 @@ async fn main() {
 
             if is_key_pressed(KeyCode::Enter) {
                 match menu_select {
-                    0=>game_loop(player_one_colour,player_two_colour).await,
+                    0=>play_menu(player_one_colour, player_two_colour).await,
                     1=>{
                         let tuple = settings(player_one_colour, player_two_colour).await;
                         (player_one_colour, player_two_colour) = tuple;
                     },
                     2=>credits().await,
-                    3=>break,
-                    _=>(),
+                    _=>break,
                 }
             } else if is_key_pressed(KeyCode::Up) && menu_select > 0 {
                 menu_select-=1
@@ -78,7 +77,7 @@ async fn main() {
                     return (p1_colour, p2_colour);
                 } 
 
-                if menu_select == 2 && is_key_pressed(KeyCode::Enter) {
+                if menu_select == menu_items.len()-1 && is_key_pressed(KeyCode::Enter) {
                     return(p1_colour,p2_colour);
                 } else if is_key_pressed(KeyCode::Up) && menu_select > 0 {
                     menu_select-=1
@@ -87,20 +86,20 @@ async fn main() {
                 } else if is_key_pressed(KeyCode::Left) {
                     match menu_select {
                         0=> {if p1_colour == 0 {
-                            p1_colour = 22;
+                            p1_colour = COLOURS.len()-1;
                         } else {p1_colour-=1}},
                         1=> {if p2_colour == 0 {
-                            p2_colour = 22;
+                            p2_colour = COLOURS.len()-1;
                         } else {p2_colour-=1}},
                         _=>(),
                     }
                 }
                 else if is_key_pressed(KeyCode::Right) {
                     match menu_select {
-                        0=> {if p1_colour == 22 {
+                        0=> {if p1_colour == COLOURS.len()-1 {
                             p1_colour = 0;
                         } else {p1_colour+=1}},
-                        1=> {if p2_colour == 22 {
+                        1=> {if p2_colour == COLOURS.len()-1 {
                             p2_colour = 0;
                         } else {p2_colour+=1}},
                         _=>(),
@@ -118,8 +117,8 @@ async fn main() {
                 }
                 draw_circle(375.0,(4.0)*TILESIZE/1.5-55.0, 20.0, COLOURS[p1_colour]);
                 draw_circle(375.0,(5.0)*TILESIZE/1.5-55.0, 20.0, COLOURS[p2_colour]);
-                draw_text("<   >", 330.0,(4.0)*TILESIZE/1.5-50.0,  TILESIZE/2.0, BLACK);
-                draw_text("<   >", 330.0,(5.0)*TILESIZE/1.5-50.0,  TILESIZE/2.0, BLACK);
+                draw_text("<   >", 332.0,(4.0)*TILESIZE/1.5-50.0,  TILESIZE/2.0, BLACK);
+                draw_text("<   >", 332.0,(5.0)*TILESIZE/1.5-50.0,  TILESIZE/2.0, BLACK);
         
                 next_frame().await
                 
@@ -143,7 +142,7 @@ async fn main() {
                 } 
                 if press_delay && is_key_pressed(KeyCode::Enter) {
                     break
-                } if !press_delay && is_key_released(KeyCode::Enter) {
+                } else if !press_delay && is_key_released(KeyCode::Enter) {
                     press_delay = true;
                 }
                 draw_text("Credits", 20.0, TILESIZE, TILESIZE, BLACK);
@@ -160,13 +159,59 @@ async fn main() {
                 }
             }
         
-        async fn game_loop(p1_colour: usize, p2_colour: usize) {
+        async fn  play_menu(p1_colour:usize, p2_colour:usize) {
+                let menu_items:Vec<String> = vec!["Player v. Player".to_string(), "Player v. Bot (Easy)".to_string(), "Player v. Bot (Normal)".to_string(), "Player v. Bot (Hard)".to_string(),"Back".to_string()];
+                let mut menu_select: usize = 0;
+                let mut press_delay = false;
+                loop {
+                    request_new_screen_size(WIDTH, HEIGHT);
+                    clear_background(BLUE);
+    
+                    if is_key_pressed(KeyCode::Escape) {
+                        return
+                    } 
+    
+                    if press_delay && is_key_pressed(KeyCode::Enter) {
+                        match menu_select {
+                            0=>game_loop(p1_colour, p2_colour, false, 0).await,
+                            1=>game_loop(p1_colour, p2_colour, true, 5).await,
+                            2=>game_loop(p1_colour, p2_colour, true, 6).await,
+                            3=>game_loop(p1_colour, p2_colour, true, 7).await,
+                            _=>break,
+                        }
+                    } else if !press_delay && is_key_released(KeyCode::Enter) {
+                        press_delay = true;
+                    }else if is_key_pressed(KeyCode::Up) && menu_select > 0 {
+                        menu_select-=1
+                    } else if is_key_pressed(KeyCode::Down) && menu_select < menu_items.len() {
+                        menu_select += 1       
+                    } 
+
+                    draw_text("Play", 20.0, TILESIZE, TILESIZE, BLACK);
+    
+                    for item in 0..menu_items.len() {
+                        if item == menu_select {
+                            draw_text(&(">".to_owned()+&menu_items[item]), 20.0, (item as f32 + 4.0)*TILESIZE/1.5-50.0, TILESIZE/2.0, DARKGRAY);
+                        } else {
+                            draw_text(&menu_items[item], 20.0, (item as f32 + 4.0)*TILESIZE/1.5-50.0, TILESIZE/2.0, DARKGRAY);
+    
+                        }
+                    }
+                    
+                    next_frame().await
+                    
+                }
+            }
+
+        async fn game_loop(p1_colour: usize, p2_colour: usize, computer:bool, depth:u8) {
                 let mut board = game::Board::new();
                 let mut current_colunm: f32 = 1.0;
                 let mut turn_colour:macroquad::color::Color = COLOURS[p1_colour];
                 let mut status:u8 = 0;  
                 let mut press_delay = false;
-                let mut computer_player = computer::Master::new();
+                let mut computer_player = computer::Master::new(depth);
+                let mut last_move: f32 = 0.0;
+                let mut ghost_colour: macroquad::color::Color = BLUE;
                 loop {
                     if is_key_pressed(KeyCode::Escape) {
                         break;
@@ -187,45 +232,61 @@ async fn main() {
                     }
         
                     if status == 0 {
+                        draw_circle(last_move*TILESIZE-OFFSET, TILESIZE/2.0, TILESIZE/2.0, ghost_colour);
                         draw_circle(current_colunm*TILESIZE-OFFSET, TILESIZE/2.0, TILESIZE/2.0, turn_colour);
+                        
                         if is_key_pressed(KeyCode::Right) && current_colunm<7.0 {
                             current_colunm+=1.0;
                         } else if is_key_pressed(KeyCode::Left) && current_colunm>1.0{
                             current_colunm-=1.0;
-                        }
-                        if press_delay && is_key_pressed(KeyCode::Enter) {
-                            if board.check_legal_move(current_colunm as usize) {
+                        } if (computer && board.turn == 'y') || press_delay && is_key_pressed(KeyCode::Enter) {
+                            if computer && board.turn == 'y' {
+                                
+                                current_colunm = computer_player.get_move(board.board, board.turn, board.turn) as f32 +1.0;
+                                last_move=current_colunm;
                                 board.make_move(current_colunm as usize);
-                                if board.turn == 'r' {
-                                    board.turn ='y';
-                                    turn_colour = COLOURS[p2_colour]
-                                } else {
-                                    board.turn='r';
-                                    turn_colour=COLOURS[p1_colour];
-                                }
-                                println!("{}", computer_player.get_move(board.board, board.turn, board.turn));
+                                board.turn = 'r';
+                                ghost_colour = macroquad::color::Color::new(COLOURS[p2_colour].r,COLOURS[p2_colour].g,COLOURS[p2_colour].b,COLOURS[p2_colour].a/1.5);
+                                turn_colour=COLOURS[p1_colour];
+                            } else {
+                                if board.check_legal_move(current_colunm as usize) {
+                                    last_move = current_colunm;
+                                    board.make_move(current_colunm as usize);
+                                    if board.turn == 'r' {
+                                        board.turn ='y';
+                                        ghost_colour = macroquad::color::Color::new(COLOURS[p1_colour].r,COLOURS[p1_colour].g,COLOURS[p1_colour].b,COLOURS[p1_colour].a/1.5);
 
-            
-                                if board.check_win(current_colunm as usize) {
-                                    if board.turn == 'y' {
-                                        status = 1;
-                                        press_delay = false;
-                        
+                                        turn_colour = COLOURS[p2_colour];
+                                        
                                     } else {
-                                        status = 2; 
-                                        press_delay = false;                      
+                                        board.turn='r';
+                                        ghost_colour = macroquad::color::Color::new(COLOURS[p2_colour].r,COLOURS[p2_colour].g,COLOURS[p2_colour].b,COLOURS[p2_colour].a/1.5);
+                                        turn_colour=COLOURS[p1_colour];
                                     }
-                                } else if !board.board.iter().any(|row| row.contains(&'0')){
-                                    status = 3;
-                                    press_delay = false;
                                 }
                             }
+                            if board.check_win(current_colunm as usize) {
+                                if board.turn == 'y' {
+                                    status = 1;
+                                    press_delay = false;
+                    
+                                } else {
+                                    status = 2; 
+                                    press_delay = false;                      
+                                }
+                            } else if !board.board.iter().any(|row| row.contains(&'0')){
+                                status = 3;
+                                press_delay = false;
+                            }
                         }
+                    
+                   
+                   
                     } else {
                         
                         match status {
                             1=>draw_text("Player 1 Wins!", 20.0, 20.0, 30.0, DARKGRAY),
-                            2=>draw_text("Player 2 Wins!", 20.0, 20.0, 30.0, DARKGRAY),
+                            2=>if !computer{ draw_text("Player 2 Wins!", 20.0, 20.0, 30.0, DARKGRAY)}else{draw_text("Computer Wins!", 20.0, 20.0, 30.0, DARKGRAY)},
                             3=>draw_text("It's a tie!", 20.0, 20.0, 30.0, DARKGRAY),
                             _=>()              
                         }
@@ -240,8 +301,8 @@ async fn main() {
             }
     
     }
-
+}
     
     //async
 
-} 
+    
