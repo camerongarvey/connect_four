@@ -245,6 +245,7 @@ async fn main() {
                                 current_colunm = computer_player.get_move(board.board, board.turn, board.turn) as f32 +1.0;
                                 last_move=current_colunm;
                                 board.make_move(current_colunm as usize);
+
                                 board.turn = 'r';
                                 ghost_colour = macroquad::color::Color::new(COLOURS[p2_colour].r,COLOURS[p2_colour].g,COLOURS[p2_colour].b,COLOURS[p2_colour].a/1.5);
                                 turn_colour=COLOURS[p1_colour];
@@ -258,6 +259,21 @@ async fn main() {
 
                                         turn_colour = COLOURS[p2_colour];
                                         
+
+                                if board.turn == 'r' {
+                                    board.turn ='y';
+                                    turn_colour = COLOURS[p2_colour]
+                                } else {
+                                    board.turn='r';
+                                    turn_colour=COLOURS[p1_colour];
+                                }
+            
+                                if board.check_win(current_colunm as usize) {
+                                    if board.turn == 'y' {
+                                        status = 1;
+                                        press_delay = false;
+                        
+
                                     } else {
                                         board.turn='r';
                                         ghost_colour = macroquad::color::Color::new(COLOURS[p2_colour].r,COLOURS[p2_colour].g,COLOURS[p2_colour].b,COLOURS[p2_colour].a/1.5);
@@ -304,5 +320,4 @@ async fn main() {
 }
     
     //async
-
-    
+}
